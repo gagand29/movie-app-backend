@@ -48,3 +48,5 @@ Thumbs.db
 
 # Ignore Docker files (if using Docker)
 .dockerignore
+
+uploads/
