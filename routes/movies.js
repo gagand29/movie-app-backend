@@ -1,8 +1,8 @@
-import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import Movie from '../models/Movie.js';
+import express from "express";
+import multer from "multer";
+import path from "path";
 import authMiddleware from "../middlewares/authMiddleware.js";
+import * as movieController from "../controllers/movieController.js";
 
 const router = express.Router();
 
@@ -13,75 +13,151 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + path.extname(file.originalname));
     }
 });
-
 const upload = multer({ storage });
 
-// ✅ Create a new movie
-router.post("/", authMiddleware, upload.single("poster"), async (req, res) => {
-    try {
-        const { title, publishing_year } = req.body;
+/**
+ * @swagger
+ * tags:
+ *   name: Movies
+ *   description: Movie management API
+ */
 
-        const posterPath = req.file ? `/uploads/${req.file.filename}` : null;
+/**
+ * @swagger
+ * /movies:
+ *   post:
+ *     summary: Create a new movie
+ *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: 
+ *                 type: string
+ *                 example: "Joker"
+ *               publishing_year:
+ *                 type: integer
+ *                 example: 2019
+ *               poster:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Movie created successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/", authMiddleware, upload.single("poster"), movieController.createMovie);
 
-        const movie = await Movie.create({
-            title,
-            publishing_year,
-            poster_url: posterPath,  // ✅ Store the full path
-            user_id: req.user.id
-        });
 
-        res.status(200).json(movie);
-    } catch (error) {
-        res.status(500).json({ message: "Error creating movie", error });
-    }
-});
+router.get("/", authMiddleware, movieController.getMovies);
 
+/**
+ * @swagger
+ * /movies/{id}:
+ *   get:
+ *     summary: Get a movie by ID
+ *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the movie
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Movie details retrieved successfully
+ *       404:
+ *         description: Movie not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get("/:id", authMiddleware, movieController.getMovieById);
 
-// ✅ Get all movies for the logged-in user
-router.get("/", authMiddleware, async (req, res) => {
-    try {
-        const movies = await Movie.findAll({ where: { user_id: req.user.id } });
-        res.status(200).json(movies);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching movies", error });
-    }
-});
+/**
+ * @swagger
+ * /movies/{id}:
+ *   put:
+ *     summary: Update a movie
+ *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the movie
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "The Dark Knight Rises"
+ *               publishing_year:
+ *                 type: integer
+ *                 example: 2012
+ *               poster:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Movie updated successfully
+ *       400:
+ *         description: Bad request
+ *       404:
+ *         description: Movie not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.put("/:id", authMiddleware, upload.single("poster"), movieController.updateMovie);
 
-// ✅ Update a movie
-router.put("/:id", authMiddleware, upload.single("poster"), async (req, res) => {
-    try {
-        const { title, publishing_year } = req.body;
-        const posterPath = req.file? `/uploads/${req.file.filename}` : null;
-        await Movie.update(
-            { title, publishing_year, ...(posterPath && {poster_url: posterPath}) },
-            { where: { id: req.params.id, user_id: req.user.id } }
-        );
-        res.json({ message: 'Movie updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: "Error updating movie", error });
-    }
-});
-
-// ✅ Delete a movie
-router.delete("/:id", authMiddleware, async (req, res) => {
-    try {
-        await Movie.destroy({ where: { id: req.params.id, user_id: req.user.id } });
-        res.json({ message: 'Movie deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting movie", error });
-    }
-});
-
-router.get("/:id", authMiddleware, async (req, res) => {
-    try {
-      const movie = await Movie.findOne({
-        where: { id: req.params.id, user_id: req.user.id },
-      });
-      if (!movie) return res.status(404).json({ message: "Movie not found" });
-      res.status(200).json(movie);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching movie", error });
-    }
-  });
+/**
+ * @swagger
+ * /movies/{id}:
+ *   delete:
+ *     summary: Delete a movie
+ *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the movie
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Movie deleted successfully
+ *       404:
+ *         description: Movie not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.delete("/:id", authMiddleware, movieController.deleteMovie);
 
 export default router;

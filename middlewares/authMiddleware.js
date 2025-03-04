@@ -4,24 +4,31 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const authMiddleware = async (req, res, next) => {
-    // Extract token from Authorization header
-    const token = req.header("Authorization")?.split(" ")[1];
+    const authHeader = req.header("Authorization");
 
-    if (!token) {
-        return res.status(401).json({ msg: "Token is not provided" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ msg: "Authorization header missing or incorrect format" });
     }
+
+    const token = authHeader.split(" ")[1];
 
     try {
         // Verify token and extract user ID
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded Token:", decoded); // Debugging
 
-        // Attach user ID to request object correctly
-        req.user = { id: decoded.userId };  // Ensure this matches the token payload
+        // Attach user ID to request object
+        req.user = { id: decoded.userId };
 
         next(); // Pass control to the next middleware
     } catch (error) {
-        return res.status(403).json({ msg: "Token is not valid" });
+        console.error("JWT Error:", error.message);
+
+        // Check if the token is expired
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({ msg: "Token expired. Please log in again." });
+        }
+
+        return res.status(403).json({ msg: "Invalid token" });
     }
 };
 
