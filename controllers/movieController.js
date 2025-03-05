@@ -38,14 +38,30 @@ export const getMovieById = async (req, res) => {
 export const updateMovie = async (req, res) => {
     try {
         const { title, publishing_year } = req.body;
-        const posterPath = req.file ? `/uploads/${req.file.filename}` : null;
-        
-        await movieService.updateMovie(req.params.id, req.user.id, title, publishing_year, posterPath);
-        res.json({ message: "Movie updated successfully" });
+        const movieId = req.params.id;
+        const userId = req.user.id;
+
+        // Check if movie exists
+        const movie = await movieService.getMovieById(movieId, userId);
+        if (!movie) return res.status(404).json({ message: "Movie not found" });
+
+        // Ensure publishing_year is correctly converted to an integer
+        const year = publishing_year ? parseInt(publishing_year, 10) : movie.publishing_year;
+
+        // Handle poster update properly
+        const posterPath = req.file ? `/uploads/${req.file.filename}` : movie.poster_url;
+
+        // Update the movie
+        await movieService.updateMovie(movieId, userId, title, year, posterPath);
+
+        res.json({ message: "Movie updated successfully", movie: { title, publishing_year: year, poster_url: posterPath } });
     } catch (error) {
+        console.error("Update Movie Error:", error);
         res.status(500).json({ message: "Error updating movie", error });
     }
 };
+
+
 
 // Delete Movie
 export const deleteMovie = async (req, res) => {
