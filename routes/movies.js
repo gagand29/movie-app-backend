@@ -133,6 +133,7 @@ router.get("/:id", authMiddleware, movieController.getMovieById);
  */
 router.put("/:id", authMiddleware, upload.single("poster"), movieController.updateMovie);
 
+
 /**
  * @swagger
  * /movies/{id}:
