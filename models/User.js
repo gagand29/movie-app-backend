@@ -1,6 +1,11 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 
+/**
+ * User Model - Represents registered users in the database.
+ * Stores basic user information like name, email, and hashed password.
+ */
+
 const User = sequelize.define("User", {
     id : {
         type: DataTypes.INTEGER,
@@ -19,7 +24,7 @@ const User = sequelize.define("User", {
     },
     password : {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false // Passwords should be securely hashed before storage
     },
 });
 

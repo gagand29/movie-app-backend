@@ -1,6 +1,37 @@
 import * as authService from "../services/authService.js";
 
-// Signup Controller
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: User authentication API
+ */
+
+/**
+ * @swagger
+ * /signup:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Bad request
+ */
 export const signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -11,7 +42,30 @@ export const signup = async (req, res) => {
     }
 };
 
-// Login Controller
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Authenticate user and get access token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Unauthorized
+ */
+
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -31,7 +85,20 @@ export const login = async (req, res) => {
     }
 };
 
-// Refresh Token Controller
+/**
+ * @swagger
+ * /refresh-token:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: New access token generated
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Invalid refresh token
+ */
 export const refreshToken = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
@@ -44,7 +111,16 @@ export const refreshToken = async (req, res) => {
     }
 };
 
-// Logout Controller
+/**
+ * @swagger
+ * /logout:
+ *   post:
+ *     summary: Logout user and clear refresh token
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ */
 export const logout = (req, res) => {
     res.clearCookie("refreshToken"); // Clear refresh token cookie
     res.json({ msg: "Logged out successfully" });

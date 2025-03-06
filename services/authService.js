@@ -2,25 +2,36 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Ensure environment variables are loaded
+// Ensure environment variables are loaded correctly
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "fallback_refresh_secret";
 
-// Log secret keys to verify they are loaded correctly (Remove in production)
-console.log("JWT_SECRET:", JWT_SECRET ? "✅ Loaded" : "❌ MISSING");
-console.log("REFRESH_SECRET:", REFRESH_SECRET ? "✅ Loaded" : "❌ MISSING");
-
-// Generate Access Token (Short-lived)
+/**
+ * Generates a short-lived access token.
+ * @param {number} userId - ID of the authenticated user
+ * @returns {string} - JWT access token
+ */
 const generateAccessToken = (userId) => {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "15m" });
 };
 
-// Generate Refresh Token (Long-lived)
+/**
+ * Generates a long-lived refresh token.
+ * @param {number} userId - ID of the authenticated user
+ * @returns {string} - JWT refresh token
+ */
 const generateRefreshToken = (userId) => {
     return jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: "7d" });
 };
 
-// Signup function
+/**
+ * Registers a new user with name, email, and hashed password.
+ * @param {string} name - User's full name
+ * @param {string} email - User's email address
+ * @param {string} password - Plaintext password
+ * @returns {object} - Success message with new user ID
+ * @throws {Error} - If the user already exists
+ */
 export const signup = async (name, email, password) => {
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) throw new Error("User already exists");
@@ -31,7 +42,13 @@ export const signup = async (name, email, password) => {
     return { message: "User created successfully", userID: newUser.id };
 };
 
-// Login function
+/**
+ * Authenticates user login by verifying credentials and issuing tokens.
+ * @param {string} email - User's email address
+ * @param {string} password - User's plaintext password
+ * @returns {object} - Access and refresh tokens
+ * @throws {Error} - If email or password is incorrect
+ */
 export const login = async (email, password) => {
     const user = await User.findOne({ where: { email } });
     if (!user) throw new Error("Invalid user or password");
@@ -45,7 +62,12 @@ export const login = async (email, password) => {
     return { accessToken, refreshToken };
 };
 
-// Refresh Access Token
+/**
+ * Generates a new access token using a valid refresh token.
+ * @param {string} refreshToken - The JWT refresh token
+ * @returns {string} - New access token
+ * @throws {Error} - If refresh token is missing, invalid, or expired
+ */
 export const refreshAccessToken = async (refreshToken) => {
     try {
         if (!refreshToken) throw new Error("Refresh token is missing");
