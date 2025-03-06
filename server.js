@@ -17,17 +17,13 @@ const app = express();
 
 // Enable CORS with Credentials Support
 app.use(cors({
-    origin: "http://localhost:3000", // Change to your frontend URL
+    origin: process.env.FRONTEND_URL || "http://localhost:3000", 
     credentials: true, // Allow sending cookies
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Enable cookie parsing
-
-// Serve the 'uploads' folder as a static directory
-const __dirname = path.resolve();
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // API routes
 app.use("/", authRoutes);
@@ -44,16 +40,16 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: "http://localhost:5001",
+                url: process.env.BACKEND_URL || "http://localhost:5001",
                 description: "Local Server"
             },
             {
-                url: "https://your-production-url.com",
+                url: process.env.PRODUCTION_BACKEND_URL || "http://your-ec2-public-ip:5001", //here
                 description: "Production Server"
             },
         ],
     },
-    apis: ["./routes/*.js"],
+    apis: ["./routes/*.js","./controllers/*.js"],
 };
 
 const swaggerDocs = swaggerJSDoc(swaggerOptions);
@@ -61,6 +57,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 const port = process.env.PORT || 5001;
 
+// Initialize database and start the server
 sequelize
     .sync({ alter: true })
     .then(() => {
